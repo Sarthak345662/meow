@@ -1,0 +1,22 @@
+name: Build DMG
+on:
+  workflow_dispatch:
+  push:
+    paths: ['downloads/Nova-Music-Mac.zip', 'app/**']
+permissions:
+  contents: write
+jobs:
+  dmg:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cd downloads && rm -rf m && mkdir -p m/src && unzip -q Nova-Music-Mac.zip -d m/src
+          cp ../app/index.html ../app/sw.js "m/src/Nova Music.app/Contents/Resources/www/"
+          chmod +x "m/src/Nova Music.app/Contents/MacOS/launcher"
+          ln -s /Applications m/src/Applications
+          hdiutil create -volname "Nova Music" -srcfolder m/src -ov -format UDZO Nova-Music.dmg
+          rm -rf m
+          git config user.name github-actions && git config user.email actions@github.com
+          git add Nova-Music.dmg && git commit -m "Build DMG" || exit 0
+          git pull --rebase && git push
